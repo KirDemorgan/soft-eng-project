@@ -1,0 +1,83 @@
+# Тестирование API букмекерской конторы
+
+### Регистрация пользователя
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Аутентификация пользователя
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123"
+}
+
+### Получение информации о пользователе
+GET http://localhost:8080/api/users/testuser
+
+### Создание события
+POST http://localhost:8080/api/events
+Content-Type: application/json
+
+{
+  "homeTeam": "Реал Мадрид",
+  "awayTeam": "Барселона",
+  "startTime": "2025-09-21T20:00:00",
+  "homeWinOdds": 2.10,
+  "awayWinOdds": 3.40,
+  "drawOdds": 3.20
+}
+
+### Получение активных событий
+GET http://localhost:8080/api/events/active
+
+### Размещение ставки
+POST http://localhost:8080/api/bets
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "eventId": 1,
+  "type": "WIN_HOME",
+  "amount": 100,
+  "odds": 2.10
+}
+
+### Получение ставок пользователя
+GET http://localhost:8080/api/bets/user/1
+
+### Обновление коэффициентов события
+PUT http://localhost:8080/api/events/1/odds
+Content-Type: application/json
+
+{
+  "homeWinOdds": 2.20,
+  "awayWinOdds": 3.30,
+  "drawOdds": 3.10
+}
+
+### Завершение события
+PUT http://localhost:8080/api/events/1/finish
+Content-Type: application/json
+
+{
+  "result": "HOME_WIN"
+}
+
+### Обработка ставки
+PUT http://localhost:8080/api/bets/1/settle
+Content-Type: application/json
+
+{
+  "result": "HOME_WIN"
+}
+
+### Импорт событий из внешнего API
+POST http://localhost:8080/api/events/import
