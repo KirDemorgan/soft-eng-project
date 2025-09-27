@@ -21,8 +21,8 @@
 ### Порождающие паттерны:
 
 #### 1. Singleton
-- **Где**: `user-service/src/main/java/com/bookmaker/user/config/JwtConfig.java`
-- **Как используется**: Единственный экземпляр для работы с JWT токенами, обеспечивает thread-safe доступ к конфигурации JWT
+- **Где**: `UserService`
+- **Как используется**: Единственный экземпляр сервиса
 
 #### 2. Factory Method
 - **Где**: `betting-service/src/main/java/com/bookmaker/betting/factory/`
