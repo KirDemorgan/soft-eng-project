@@ -1,10 +1,8 @@
 package com.bookmaker.user.service;
 
-import com.bookmaker.user.config.JwtConfig;
 import com.bookmaker.user.model.User;
 import com.bookmaker.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,12 +13,6 @@ public class UserService {
     
     @Autowired
     private UserRepository userRepository;
-    
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    
-    @Autowired
-    private JwtConfig jwtConfig;
     
     public User registerUser(String username, String email, String password) {
         if (userRepository.existsByUsername(username)) {
@@ -35,27 +27,26 @@ public class UserService {
         User user = new User.Builder()
                 .username(username)
                 .email(email)
-                .password(passwordEncoder.encode(password))
+                .password((password))
                 .balance(BigDecimal.valueOf(1000)) // Стартовый баланс
                 .build();
         
         return userRepository.save(user);
     }
-    
+
     public String authenticateUser(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
-        
+
         if (userOpt.isEmpty()) {
             throw new RuntimeException("Пользователь не найден");
         }
-        
+
         User user = userOpt.get();
-        
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+
+        if (password.equals(user.getPassword())) {
             throw new RuntimeException("Неверный пароль");
         }
-        
-        return jwtConfig.generateToken(username);
+        return (username);
     }
     
     public Optional<User> findByUsername(String username) {
