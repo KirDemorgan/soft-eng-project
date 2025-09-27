@@ -56,11 +56,11 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         try {
-            String token = userService.authenticateUser(
+            Long id = userService.authenticateUser(
                 request.get("username"),
                 request.get("password")
             );
-            return ResponseEntity.ok(Map.of("token", token));
+            return ResponseEntity.ok(Map.of("id", id));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -34,7 +34,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public String authenticateUser(String username, String password) {
+    public Long authenticateUser(String username, String password) {
         Optional<User> userOpt = userRepository.findByUsername(username);
 
         if (userOpt.isEmpty()) {
@@ -46,7 +46,7 @@ public class UserService {
         if (password.equals(user.getPassword())) {
             throw new RuntimeException("Неверный пароль");
         }
-        return (username);
+        return (user.getId());
     }
     
     public Optional<User> findByUsername(String username) {
