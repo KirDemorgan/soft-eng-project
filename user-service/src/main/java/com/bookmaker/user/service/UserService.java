@@ -2,6 +2,7 @@ package com.bookmaker.user.service;
 
 import com.bookmaker.user.model.User;
 import com.bookmaker.user.repository.UserRepository;
+import com.bookmaker.user.singleton.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,9 @@ public class UserService {
     private UserRepository userRepository;
     
     public User registerUser(String username, String email, String password) {
+
+        Logger.getInstance().info();
+
         if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("Пользователь с таким именем уже существует");
         }
