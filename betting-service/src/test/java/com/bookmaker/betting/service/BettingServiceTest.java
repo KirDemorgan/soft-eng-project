@@ -51,7 +51,6 @@ class BettingServiceTest {
 
     @Test
     void placeBet_Success() {
-        // Given
         Long userId = 1L;
         Long eventId = 1L;
         BetType type = BetType.WIN_HOME;
@@ -62,10 +61,8 @@ class BettingServiceTest {
         when(betRepository.save(testBet)).thenReturn(testBet);
         doNothing().when(userServiceClient).updateBalance(userId, amount.negate());
 
-        // When
         Bet result = bettingService.placeBet(userId, eventId, type, amount, odds);
 
-        // Then
         assertNotNull(result);
         assertEquals(testBet.getId(), result.getId());
         assertEquals(userId, result.getUserId());
@@ -81,7 +78,6 @@ class BettingServiceTest {
 
     @Test
     void placeBet_FactoryThrowsException_ShouldThrowRuntimeException() {
-        // Given
         Long userId = 1L;
         Long eventId = 1L;
         BetType type = BetType.WIN_HOME;
@@ -89,9 +85,8 @@ class BettingServiceTest {
         BigDecimal odds = BigDecimal.valueOf(2.10);
 
         when(betFactory.createBet(userId, eventId, type, amount, odds))
-                .thenThrow(new IllegalArgumentException("Неверные параметры ставки"));
+                .thenThrow(new IllegalArgumentException("Invalid bet parameters"));
 
-        // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
                 bettingService.placeBet(userId, eventId, type, amount, odds));
 
@@ -102,7 +97,6 @@ class BettingServiceTest {
 
     @Test
     void settleBet_WinningBet_Success() {
-        // Given
         Long betId = 1L;
         String eventResult = "HOME_WIN";
         BigDecimal payout = BigDecimal.valueOf(210);
@@ -113,10 +107,8 @@ class BettingServiceTest {
         when(betRepository.save(testBet)).thenReturn(testBet);
         doNothing().when(userServiceClient).updateBalance(testBet.getUserId(), payout);
 
-        // When
         bettingService.settleBet(betId, eventResult);
 
-        // Then
         assertEquals(BetStatus.WON, testBet.getStatus());
         assertEquals(payout, testBet.getPayout());
         assertNotNull(testBet.getSettledAt());
@@ -129,7 +121,6 @@ class BettingServiceTest {
 
     @Test
     void settleBet_LosingBet_Success() {
-        // Given
         Long betId = 1L;
         String eventResult = "AWAY_WIN";
         BigDecimal payout = BigDecimal.ZERO;
@@ -139,10 +130,8 @@ class BettingServiceTest {
         when(payoutStrategy.calculatePayout(testBet, eventResult)).thenReturn(payout);
         when(betRepository.save(testBet)).thenReturn(testBet);
 
-        // When
         bettingService.settleBet(betId, eventResult);
 
-        // Then
         assertEquals(BetStatus.LOST, testBet.getStatus());
         assertEquals(payout, testBet.getPayout());
         assertNotNull(testBet.getSettledAt());
@@ -155,13 +144,11 @@ class BettingServiceTest {
 
     @Test
     void settleBet_BetNotFound_ShouldThrowException() {
-        // Given
         Long betId = 1L;
         String eventResult = "HOME_WIN";
 
         when(betRepository.findById(betId)).thenReturn(Optional.empty());
 
-        // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
                 bettingService.settleBet(betId, eventResult));
 
@@ -173,14 +160,12 @@ class BettingServiceTest {
 
     @Test
     void settleBet_BetAlreadySettled_ShouldThrowException() {
-        // Given
         Long betId = 1L;
         String eventResult = "HOME_WIN";
 
         testBet.setStatus(BetStatus.WON);
         when(betRepository.findById(betId)).thenReturn(Optional.of(testBet));
 
-        // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
                 bettingService.settleBet(betId, eventResult));
 
@@ -191,48 +176,63 @@ class BettingServiceTest {
     }
 
     @Test
+    void settleBet_PushBet_Success() {
+        Long betId = 1L;
+        String eventResult = "OVER_2.5_PUSH";
+        BigDecimal payout = BigDecimal.valueOf(100);
+
+        testBet.setStatus(BetStatus.PENDING);
+        when(betRepository.findById(betId)).thenReturn(Optional.of(testBet));
+        when(payoutStrategy.calculatePayout(testBet, eventResult)).thenReturn(payout);
+        when(betRepository.save(testBet)).thenReturn(testBet);
+        doNothing().when(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount());
+
+        bettingService.settleBet(betId, eventResult);
+
+        assertEquals(BetStatus.PUSH, testBet.getStatus());
+        assertEquals(payout, testBet.getPayout());
+        assertNotNull(testBet.getSettledAt());
+
+        verify(betRepository).findById(betId);
+        verify(payoutStrategy).calculatePayout(testBet, eventResult);
+        verify(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount());
+        verify(betRepository).save(testBet);
+    }
+
+    @Test
     void getUserBets_Success() {
-        // Given
         Long userId = 1L;
         List<Bet> expectedBets = Arrays.asList(testBet);
 
         when(betRepository.findByUserId(userId)).thenReturn(expectedBets);
 
-        // When
         List<Bet> result = bettingService.getUserBets(userId);
 
-        // Then
         assertEquals(expectedBets, result);
         verify(betRepository).findByUserId(userId);
     }
 
     @Test
     void getEventBets_Success() {
-        // Given
         Long eventId = 1L;
         List<Bet> expectedBets = Arrays.asList(testBet);
 
         when(betRepository.findByEventId(eventId)).thenReturn(expectedBets);
 
-        // When
         List<Bet> result = bettingService.getEventBets(eventId);
 
-        // Then
         assertEquals(expectedBets, result);
         verify(betRepository).findByEventId(eventId);
     }
 
     @Test
     void getPendingBets_Success() {
-        // Given
         List<Bet> expectedBets = Arrays.asList(testBet);
 
         when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(expectedBets);
 
-        // When
         List<Bet> result = bettingService.getPendingBets();
 
-        // Then
         assertEquals(expectedBets, result);
         verify(betRepository).findByStatus(BetStatus.PENDING);
     }

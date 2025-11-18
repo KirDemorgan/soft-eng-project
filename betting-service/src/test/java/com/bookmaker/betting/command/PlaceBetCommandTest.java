@@ -37,98 +37,81 @@ class PlaceBetCommandTest {
 
     @Test
     void execute_Success() {
-        // Given
         when(betRepository.save(testBet)).thenReturn(testBet);
         doNothing().when(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
 
-        // When
         command.execute();
 
-        // Then
         verify(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
         verify(betRepository).save(testBet);
     }
 
     @Test
     void execute_AlreadyExecuted_ShouldThrowException() {
-        // Given
         when(betRepository.save(testBet)).thenReturn(testBet);
         doNothing().when(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
         
-        command.execute(); // Первое выполнение
+        command.execute();
 
-        // When & Then
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
                 command.execute());
 
         assertEquals("Команда уже выполнена", exception.getMessage());
         
-        // Проверяем, что методы вызывались только один раз
         verify(userServiceClient, times(1)).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
         verify(betRepository, times(1)).save(testBet);
     } 
    @Test
     void undo_AfterExecute_Success() {
-        // Given
         when(betRepository.save(testBet)).thenReturn(testBet);
         doNothing().when(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
         doNothing().when(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount());
         doNothing().when(betRepository).delete(testBet);
         
-        command.execute(); // Сначала выполняем команду
+        command.execute();
 
-        // When
         command.undo();
 
-        // Then
-        verify(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount()); // Возврат средств
+        verify(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount());
         verify(betRepository).delete(testBet);
     }
 
     @Test
     void undo_NotExecuted_ShouldThrowException() {
-        // Given - команда не выполнена
-
-        // When & Then
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
                 command.undo());
 
         assertEquals("Команда не была выполнена", exception.getMessage());
         
-        // Проверяем, что методы не вызывались
         verify(userServiceClient, never()).updateBalance((Long) any(), (Map<String, BigDecimal>) any());
         verify(betRepository, never()).delete(any());
     }
 
     @Test
     void execute_UserServiceThrowsException_ShouldPropagateException() {
-        // Given
-        RuntimeException userServiceException = new RuntimeException("Недостаточно средств");
+        RuntimeException userServiceException = new RuntimeException("Insufficient funds");
         doThrow(userServiceException).when(userServiceClient)
                 .updateBalance(testBet.getUserId(), testBet.getAmount().negate());
 
-        // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
                 command.execute());
 
-        assertEquals("Недостаточно средств", exception.getMessage());
+        assertEquals("Insufficient funds", exception.getMessage());
         
         verify(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
-        verify(betRepository, never()).save(testBet); // Ставка не должна сохраниться при ошибке
+        verify(betRepository, never()).save(testBet);
     }
 
     @Test
     void execute_RepositoryThrowsException_ShouldPropagateException() {
-        // Given
         doNothing().when(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
-        RuntimeException repositoryException = new RuntimeException("Ошибка базы данных");
+        RuntimeException repositoryException = new RuntimeException("Database error");
         when(betRepository.save(testBet)).thenThrow(repositoryException);
 
-        // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
                 command.execute());
 
-        assertEquals("Ошибка базы данных", exception.getMessage());
+        assertEquals("Database error", exception.getMessage());
         
         verify(userServiceClient).updateBalance(testBet.getUserId(), testBet.getAmount().negate());
         verify(betRepository).save(testBet);
