@@ -11,15 +11,18 @@ public class StandardPayoutStrategy implements PayoutStrategy {
     
     @Override
     public BigDecimal calculatePayout(Bet bet, String eventResult) {
+        if (isPush(bet, eventResult)) {
+            return bet.getAmount();
+        }
         if (isWinningBet(bet, eventResult)) {
             return bet.getAmount().multiply(bet.getOdds());
         }
         return BigDecimal.ZERO;
     }
-    
+
     private boolean isWinningBet(Bet bet, String eventResult) {
         BetType betType = bet.getType();
-        
+
         switch (betType) {
             case WIN_HOME:
                 return "HOME_WIN".equals(eventResult);
@@ -28,22 +31,33 @@ public class StandardPayoutStrategy implements PayoutStrategy {
             case DRAW:
                 return "DRAW".equals(eventResult);
             case OVER_UNDER:
-                return checkOverUnder(eventResult);
+                return checkOverUnder(eventResult) && (eventResult != null && !eventResult.contains("PUSH"));
             case HANDICAP:
-                return checkHandicap(eventResult);
+                return checkHandicap(eventResult) && (eventResult != null && !eventResult.contains("PUSH"));
             default:
                 return false;
         }
     }
-    
+
     private boolean checkOverUnder(String eventResult) {
-        // Упрощенная логика для тотала
-        // В реальности здесь была бы более сложная логика
-        return eventResult.startsWith("OVER") || eventResult.startsWith("UNDER");
+        return eventResult != null && (eventResult.startsWith("OVER") || eventResult.startsWith("UNDER"));
     }
-    
+
     private boolean checkHandicap(String eventResult) {
-        // Упрощенная логика для форы
-        return eventResult.startsWith("HANDICAP");
+        return eventResult != null && eventResult.startsWith("HANDICAP");
+    }
+
+    private boolean isPush(Bet bet, String eventResult) {
+        if (eventResult == null) {
+            return false;
+        }
+        BetType betType = bet.getType();
+        switch (betType) {
+            case OVER_UNDER:
+            case HANDICAP:
+                return eventResult.contains("PUSH");
+            default:
+                return false;
+        }
     }
 }

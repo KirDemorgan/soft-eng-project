@@ -9,6 +9,8 @@ import com.bookmaker.betting.repository.BetRepository;
 import com.bookmaker.betting.strategy.PayoutStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,6 +18,7 @@ import java.util.List;
 
 @Service
 public class BettingService {
+    private static final Logger log = LoggerFactory.getLogger(BettingService.class);
     
     @Autowired
     private BetRepository betRepository;
@@ -30,21 +33,18 @@ public class BettingService {
     private UserServiceClient userServiceClient;
     
     public Bet placeBet(Long userId, Long eventId, BetType type, BigDecimal amount, BigDecimal odds) {
-        // Используем Factory Method для создания ставки
         Bet bet = betFactory.createBet(userId, eventId, type, amount, odds);
         
-        // Используем Command Pattern для размещения ставки
         PlaceBetCommand command = new PlaceBetCommand(bet, betRepository, userServiceClient);
         
         try {
             command.execute();
             return bet;
         } catch (Exception e) {
-            // В случае ошибки откатываем операцию
             try {
                 command.undo();
             } catch (Exception undoException) {
-                // Логируем ошибку отката
+                log.error("Error undoing place bet command", undoException);
             }
             throw new RuntimeException("Не удалось разместить ставку: " + e.getMessage());
         }
@@ -58,15 +58,16 @@ public class BettingService {
             throw new RuntimeException("Ставка уже обработана");
         }
         
-        // Используем Strategy Pattern для расчета выплаты
         BigDecimal payout = payoutStrategy.calculatePayout(bet, eventResult);
         
         bet.setPayout(payout);
         bet.setSettledAt(LocalDateTime.now());
         
-        if (payout.compareTo(BigDecimal.ZERO) > 0) {
+        if (payout.compareTo(bet.getAmount()) == 0 && !payout.equals(BigDecimal.ZERO)) {
+            bet.setStatus(BetStatus.PUSH);
+            userServiceClient.updateBalance(bet.getUserId(), bet.getAmount());
+        } else if (payout.compareTo(BigDecimal.ZERO) > 0) {
             bet.setStatus(BetStatus.WON);
-            // Начисляем выигрыш на баланс пользователя
             userServiceClient.updateBalance(bet.getUserId(), payout);
         } else {
             bet.setStatus(BetStatus.LOST);
