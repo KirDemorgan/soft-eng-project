@@ -1,5 +1,7 @@
 package com.bookmaker.event.observer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -8,6 +10,7 @@ import java.util.List;
 
 @Component
 public class OddChangeNotifier {
+    private static final Logger log = LoggerFactory.getLogger(OddChangeNotifier.class);
     
     private final List<OddChangeObserver> observers = new ArrayList<>();
     
@@ -24,8 +27,7 @@ public class OddChangeNotifier {
             try {
                 observer.onOddChange(eventId, oddType, oldOdd, newOdd);
             } catch (Exception e) {
-                // Логируем ошибку, но продолжаем уведомлять других наблюдателей
-                System.err.println("Ошибка при уведомлении наблюдателя: " + e.getMessage());
+                log.error("Error notifying observer", e);
             }
         }
     }

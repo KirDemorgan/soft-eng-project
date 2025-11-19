@@ -1,5 +1,8 @@
 package com.bookmaker.user.controller;
 
+import com.bookmaker.user.dto.LoginRequest;
+import com.bookmaker.user.dto.RegistrationRequest;
+import com.bookmaker.user.dto.UpdateBalanceRequest;
 import com.bookmaker.user.model.User;
 import com.bookmaker.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,71 +12,72 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@Tag(name = "User Management", description = "API для управления пользователями")
+@Tag(name = "User Management", description = "API for user management")
 public class UserController {
-    
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+
     @Autowired
     private UserService userService;
     
-    @Operation(summary = "Регистрация нового пользователя", 
-               description = "Создает нового пользователя с начальным балансом 1000")
+    @Operation(summary = "Register a new user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегистрирован"),
-        @ApiResponse(responseCode = "400", description = "Ошибка валидации данных")
+        @ApiResponse(responseCode = "200", description = "User registered successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid user data")
     })
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> register(@RequestBody RegistrationRequest request) {
         try {
             User user = userService.registerUser(
-                request.get("username"),
-                request.get("email"),
-                request.get("password")
+                request.getUsername(),
+                request.getEmail(),
+                request.getPassword()
             );
             return ResponseEntity.ok(Map.of(
-                "message", "Пользователь успешно зарегистрирован",
+                "message", "User registered successfully",
                 "userId", user.getId()
             ));
         } catch (Exception e) {
+            log.error("Error registering user", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
     
-    @Operation(summary = "Аутентификация пользователя", 
-               description = "Проверяет учетные данные и возвращает JWT токен")
+    @Operation(summary = "Authenticate a user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Успешная аутентификация"),
-        @ApiResponse(responseCode = "400", description = "Неверные учетные данные")
+        @ApiResponse(responseCode = "200", description = "Authentication successful"),
+        @ApiResponse(responseCode = "400", description = "Invalid credentials")
     })
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             Long id = userService.authenticateUser(
-                request.get("username"),
-                request.get("password")
+                request.getUsername(),
+                request.getPassword()
             );
             return ResponseEntity.ok(Map.of("id", id));
         } catch (Exception e) {
+            log.error("Error authenticating user", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
     
-    @Operation(summary = "Получение информации о пользователе", 
-               description = "Возвращает данные пользователя по имени пользователя")
+    @Operation(summary = "Get user information")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Пользователь найден"),
-        @ApiResponse(responseCode = "404", description = "Пользователь не найден")
+        @ApiResponse(responseCode = "200", description = "User found"),
+        @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping("/{username}")
-    public ResponseEntity<?> getUser(@Parameter(description = "Имя пользователя") @PathVariable String username) {
+    public ResponseEntity<?> getUser(@Parameter(description = "Username") @PathVariable String username) {
         return userService.findByUsername(username)
                 .map(user -> ResponseEntity.ok(Map.of(
                     "id", user.getId(),
@@ -84,22 +88,22 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @Operation(summary = "Обновление баланса пользователя", 
-               description = "Изменяет баланс пользователя на указанную сумму (может быть отрицательной)")
+    @Operation(summary = "Update user balance")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Баланс успешно обновлен"),
-        @ApiResponse(responseCode = "400", description = "Недостаточно средств или пользователь не найден")
+        @ApiResponse(responseCode = "200", description = "Balance updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Insufficient funds or user not found")
     })
     @PutMapping("/{userId}/balance")
-    public ResponseEntity<?> updateBalance(@Parameter(description = "ID пользователя") @PathVariable Long userId, 
-                                         @RequestBody Map<String, BigDecimal> request) {
+    public ResponseEntity<?> updateBalance(@Parameter(description = "User ID") @PathVariable Long userId,
+                                         @RequestBody UpdateBalanceRequest request) {
         try {
-            User user = userService.updateBalance(userId, request.get("amount"));
+            User user = userService.updateBalance(userId, request.getAmount());
             return ResponseEntity.ok(Map.of(
-                "message", "Баланс обновлен",
+                "message", "Balance updated",
                 "newBalance", user.getBalance()
             ));
         } catch (Exception e) {
+            log.error("Error updating balance", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

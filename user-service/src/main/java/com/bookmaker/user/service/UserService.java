@@ -2,7 +2,8 @@ package com.bookmaker.user.service;
 
 import com.bookmaker.user.model.User;
 import com.bookmaker.user.repository.UserRepository;
-import com.bookmaker.user.singleton.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,44 +12,37 @@ import java.util.Optional;
 
 @Service
 public class UserService {
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     
     @Autowired
     private UserRepository userRepository;
     
     public User registerUser(String username, String email, String password) {
-
-        Logger.getInstance().info();
-
+        log.info("Registering user with username: {}", username);
         if (userRepository.existsByUsername(username)) {
-            throw new RuntimeException("Пользователь с таким именем уже существует");
+            throw new IllegalArgumentException("Username already exists");
         }
         
         if (userRepository.existsByEmail(email)) {
-            throw new RuntimeException("Пользователь с таким email уже существует");
+            throw new IllegalArgumentException("Email already exists");
         }
         
-        // Использование Builder Pattern
         User user = new User.Builder()
                 .username(username)
                 .email(email)
                 .password((password))
-                .balance(BigDecimal.valueOf(1000)) // Стартовый баланс
+                .balance(BigDecimal.valueOf(1000))
                 .build();
         
         return userRepository.save(user);
     }
 
     public Long authenticateUser(String username, String password) {
-        Optional<User> userOpt = userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (userOpt.isEmpty()) {
-            throw new RuntimeException("Пользователь не найден");
-        }
-
-        User user = userOpt.get();
-
-        if (password.equals(user.getPassword())) {
-            throw new RuntimeException("Неверный пароль");
+        if (!password.equals(user.getPassword())) {
+            throw new IllegalArgumentException("Invalid password");
         }
         return (user.getId());
     }
@@ -59,11 +53,11 @@ public class UserService {
     
     public User updateBalance(Long userId, BigDecimal amount) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         
         BigDecimal newBalance = user.getBalance().add(amount);
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Недостаточно средств");
+            throw new IllegalStateException("Insufficient funds");
         }
         
         user.setBalance(newBalance);

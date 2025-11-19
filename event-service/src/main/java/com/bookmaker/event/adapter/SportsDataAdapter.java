@@ -7,14 +7,18 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Adapter Pattern - адаптация внешних API спортивных данных
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Component
 public class SportsDataAdapter {
-    
+    private static final Logger log = LoggerFactory.getLogger(SportsDataAdapter.class);
+
     @Autowired
     private ExternalSportsApi externalSportsApi;
     
     public List<Event> getUpcomingEventsFromExternal() {
+        log.info("Fetching upcoming events from external API");
         List<ExternalEvent> externalEvents = externalSportsApi.getUpcomingEvents();
         
         return externalEvents.stream()
@@ -23,6 +27,7 @@ public class SportsDataAdapter {
     }
     
     public void updateEventOdds(Event event, String externalEventId) {
+        log.info("Updating odds for event {} from external API", event.getId());
         ExternalOdds externalOdds = externalSportsApi.getEventOdds(externalEventId);
         
         event.setHomeWinOdds(externalOdds.getHomeWin());
@@ -31,6 +36,7 @@ public class SportsDataAdapter {
     }
     
     public String getEventResult(String externalEventId) {
+        log.info("Fetching result for external event {}", externalEventId);
         ExternalResult externalResult = externalSportsApi.getEventResult(externalEventId);
         return convertToInternalResult(externalResult);
     }
@@ -41,7 +47,6 @@ public class SportsDataAdapter {
         event.setAwayTeam(externalEvent.getAwayTeam());
         event.setStartTime(externalEvent.getStartTime());
         
-        // Получаем коэффициенты для события
         ExternalOdds odds = externalSportsApi.getEventOdds(externalEvent.getId());
         event.setHomeWinOdds(odds.getHomeWin());
         event.setAwayWinOdds(odds.getAwayWin());
@@ -51,7 +56,6 @@ public class SportsDataAdapter {
     }
     
     private String convertToInternalResult(ExternalResult externalResult) {
-        // Конвертируем внешний формат результата во внутренний
         switch (externalResult.getResult()) {
             case "HOME_WIN":
                 return "HOME_WIN";

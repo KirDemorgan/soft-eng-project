@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
 
-// Proxy Pattern - кеширование запросов к сервису событий
+import org.springframework.cache.annotation.CacheEvict;
+
 @Component
 public class CachedEventService {
     
@@ -31,11 +32,12 @@ public class CachedEventService {
         return eventService.getUpcomingEvents(hours);
     }
     
-    // Методы, которые изменяют данные, не кешируются
+    @CacheEvict(value = {"activeEvents", "upcomingEvents"}, allEntries = true)
     public Event createEvent(Event event) {
         return eventService.createEvent(event);
     }
     
+    @CacheEvict(value = {"events", "activeEvents", "upcomingEvents"}, allEntries = true)
     public Event updateEvent(Event event) {
         return eventService.updateEvent(event);
     }
