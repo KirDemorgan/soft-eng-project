@@ -8,61 +8,55 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-// Конкретный декоратор для логирования операций пользователей
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Component
 public class LoggingUserServiceDecorator extends UserServiceDecorator {
-    
+    private static final Logger log = LoggerFactory.getLogger(LoggingUserServiceDecorator.class);
+
     public LoggingUserServiceDecorator(UserService userService) {
         super(userService);
     }
     
     @Override
     public User registerUser(String username, String email, String password) {
-        System.out.println(String.format("[%s] Регистрация пользователя: %s, email: %s", 
-                LocalDateTime.now(), username, email));
+        log.info("Registering user: {}, email: {}", username, email);
         
         try {
             User user = super.registerUser(username, email, password);
-            System.out.println(String.format("[%s] Пользователь %s успешно зарегистрирован с ID: %d", 
-                    LocalDateTime.now(), username, user.getId()));
+            log.info("User {} registered successfully with ID: {}", username, user.getId());
             return user;
         } catch (Exception e) {
-            System.err.println(String.format("[%s] Ошибка регистрации пользователя %s: %s", 
-                    LocalDateTime.now(), username, e.getMessage()));
+            log.error("Error registering user {}: {}", username, e.getMessage());
             throw e;
         }
     }
     
     @Override
-    public String authenticateUser(String username, String password) {
-        System.out.println(String.format("[%s] Попытка аутентификации пользователя: %s", 
-                LocalDateTime.now(), username));
+    public Long authenticateUser(String username, String password) {
+        log.info("Attempting to authenticate user: {}", username);
         
         try {
-            String token = super.authenticateUser(username, password);
-            System.out.println(String.format("[%s] Пользователь %s успешно аутентифицирован", 
-                    LocalDateTime.now(), username));
-            return token;
+            Long id = super.authenticateUser(username, password);
+            log.info("User {} authenticated successfully", username);
+            return id;
         } catch (Exception e) {
-            System.err.println(String.format("[%s] Ошибка аутентификации пользователя %s: %s", 
-                    LocalDateTime.now(), username, e.getMessage()));
+            log.error("Error authenticating user {}: {}", username, e.getMessage());
             throw e;
         }
     }
     
     @Override
     public User updateBalance(Long userId, BigDecimal amount) {
-        System.out.println(String.format("[%s] Обновление баланса пользователя ID %d на сумму: %s", 
-                LocalDateTime.now(), userId, amount));
+        log.info("Updating balance for user ID {} by amount: {}", userId, amount);
         
         try {
             User user = super.updateBalance(userId, amount);
-            System.out.println(String.format("[%s] Баланс пользователя ID %d обновлен. Новый баланс: %s", 
-                    LocalDateTime.now(), userId, user.getBalance()));
+            log.info("Balance for user ID {} updated. New balance: {}", userId, user.getBalance());
             return user;
         } catch (Exception e) {
-            System.err.println(String.format("[%s] Ошибка обновления баланса пользователя ID %d: %s", 
-                    LocalDateTime.now(), userId, e.getMessage()));
+            log.error("Error updating balance for user ID {}: {}", userId, e.getMessage());
             throw e;
         }
     }

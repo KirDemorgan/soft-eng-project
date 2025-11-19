@@ -7,41 +7,39 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Schema(description = "Модель пользователя букмекерской конторы")
+@Schema(description = "User model")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Schema(description = "Уникальный идентификатор пользователя", example = "1")
+    @Schema(description = "Unique user identifier", example = "1")
     private Long id;
     
     @Column(unique = true, nullable = false)
-    @Schema(description = "Имя пользователя", example = "testuser", required = true)
+    @Schema(description = "Username", example = "testuser", required = true)
     private String username;
     
     @Column(nullable = false)
-    @Schema(description = "Пароль пользователя (хешированный)", hidden = true)
+    @Schema(description = "User password (hashed)", hidden = true)
     private String password;
     
     @Column(unique = true, nullable = false)
-    @Schema(description = "Email пользователя", example = "test@example.com", required = true)
+    @Schema(description = "User email", example = "test@example.com", required = true)
     private String email;
     
     @Column(nullable = false)
-    @Schema(description = "Баланс пользователя", example = "1000.00")
+    @Schema(description = "User balance", example = "1000.00")
     private BigDecimal balance = BigDecimal.ZERO;
     
     @Column(name = "created_at")
-    @Schema(description = "Дата и время создания аккаунта", example = "2025-09-20T15:30:00")
+    @Schema(description = "Account creation date and time", example = "2025-09-20T15:30:00")
     private LocalDateTime createdAt;
     
     @Column(name = "is_active")
-    @Schema(description = "Статус активности пользователя", example = "true")
+    @Schema(description = "User activity status", example = "true")
     private Boolean isActive = true;
 
-    // Конструктор по умолчанию для JPA
     public User() {}
 
-    // Приватный конструктор для Builder
     private User(Builder builder) {
         this.username = builder.username;
         this.password = builder.password;
@@ -51,7 +49,6 @@ public class User {
         this.isActive = builder.isActive;
     }
 
-    // Builder Pattern
     public static class Builder {
         private String username;
         private String password;
@@ -95,7 +92,6 @@ public class User {
         }
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

@@ -6,7 +6,6 @@ import com.bookmaker.user.service.UserService;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-// Decorator Pattern - базовый декоратор для сервиса пользователей
 public abstract class UserServiceDecorator {
     
     protected UserService userService;
@@ -19,7 +18,7 @@ public abstract class UserServiceDecorator {
         return userService.registerUser(username, email, password);
     }
     
-    public String authenticateUser(String username, String password) {
+    public Long authenticateUser(String username, String password) {
         return userService.authenticateUser(username, password);
     }
     

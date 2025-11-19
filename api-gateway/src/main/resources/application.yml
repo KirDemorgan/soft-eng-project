@@ -28,6 +28,3 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
-jwt:
-  secret: mySecretKey123456789012345678901234567890

@@ -11,12 +11,80 @@ if ! command_exists curl || ! command_exists jq; then
     exit 1
 fi
 
-BASE_URL="http://localhost:8082/api/bets"
-USER_ID=1
-EVENT_ID=1
+BASE_URL="http://localhost:8080/api"
+USER_ID=""
+EVENT_ID=""
+BET_ID=""
 
-# --- Test Case 1: Place a Bet ---
-echo "--- Test Case 1: Place a Bet ---"
+# --- Test Case 1: Register a New User ---
+echo "--- Test Case 1: Register a New User ---"
+register_payload=$(cat <<EOF
+{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password"
+}
+EOF
+)
+
+register_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$register_payload" "$BASE_URL/users/register")
+
+if [[ $(echo "$register_response" | jq -r '.message') == "User registered successfully" ]]; then
+    echo "PASS: Register User"
+    USER_ID=$(echo "$register_response" | jq -r '.userId')
+else
+    echo "FAIL: Register User"
+    echo "Response: $register_response"
+    exit 1
+fi
+
+# --- Test Case 2: Login ---
+echo "--- Test Case 2: Login ---"
+login_payload=$(cat <<EOF
+{
+    "username": "testuser",
+    "password": "password"
+}
+EOF
+)
+
+login_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$login_payload" "$BASE_URL/users/login")
+
+if [[ $(echo "$login_response" | jq -r '.id') == "$USER_ID" ]]; then
+    echo "PASS: Login"
+else
+    echo "FAIL: Login"
+    echo "Response: $login_response"
+    exit 1
+fi
+
+# --- Test Case 3: Create an Event ---
+echo "--- Test Case 3: Create an Event ---"
+create_event_payload=$(cat <<EOF
+{
+    "homeTeam": "Team A",
+    "awayTeam": "Team B",
+    "startTime": "$(date -u +"%Y-%m-%dT%H:%M:%S")",
+    "homeWinOdds": 1.5,
+    "awayWinOdds": 2.5,
+    "drawOdds": 3.0
+}
+EOF
+)
+
+create_event_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$create_event_payload" "$BASE_URL/events")
+
+if [[ $(echo "$create_event_response" | jq -r '.id') != "null" ]]; then
+    echo "PASS: Create Event"
+    EVENT_ID=$(echo "$create_event_response" | jq -r '.id')
+else
+    echo "FAIL: Create Event"
+    echo "Response: $create_event_response"
+    exit 1
+fi
+
+# --- Test Case 4: Place a Bet ---
+echo "--- Test Case 4: Place a Bet ---"
 place_bet_payload=$(cat <<EOF
 {
     "userId": $USER_ID,
@@ -29,6 +97,7 @@ EOF
 )
 
 place_bet_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$place_bet_payload" "$BASE_URL")
+place_bet_response=$(curl -s -X POST -H "Content-Type: application/json" -d "$place_bet_payload" "$BASE_URL/bets")
 
 if [[ $(echo "$place_bet_response" | jq -r '.message') == "Bet placed successfully" ]]; then
     echo "PASS: Place Bet"
